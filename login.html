@@ -77,16 +77,6 @@
             transform: scale(1.025);
             color: white;
         }
-        .error-message {
-            color: #ff4444;
-            background-color: rgba(255, 68, 68, 0.1);
-            border: 1px solid #ff4444;
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-            display: none;
-            text-align: center;
-        }
     </style>
     </head>
     <body>
@@ -97,7 +87,6 @@
         <div class="page">
             <div class="instructioncard">
                 <h2>Login</h2>
-                <div id="errorMessage" class="error-message"></div>
                 <form>
                     <label for="username">Username:</label><br>
                     <input type="text" id="username" name="username" required><br><br>
@@ -109,59 +98,23 @@
     <script src="https://cleuro-game.onrender.com/socket.io/socket.io.js"></script>
     <script>
         const socket = io('https://cleuro-game.onrender.com');
-        const errorMessageDiv = document.getElementById('errorMessage');
-        
-        function showError(message) {
-            errorMessageDiv.textContent = message;
-            errorMessageDiv.style.display = 'block';
-        }
-        
-        function hideError() {
-            errorMessageDiv.style.display = 'none';
-        }
-        
-        // Handle connection errors
-        socket.on('connect_error', function(error) {
-            showError('Unable to connect to server. Please check your internet connection and try again.');
-        });
-        
-        socket.on('connect_timeout', function() {
-            showError('Connection timeout. The server is taking too long to respond.');
-        });
-        
-        socket.on('error', function(error) {
-            showError('An error occurred: ' + error);
-        });
         
         document.querySelector('form').addEventListener('submit', function(e) {
             e.preventDefault();
-            hideError();
             
             const username = document.getElementById('username').value.trim();
             
             if (username) {
-                // Check if socket is connected
-                if (!socket.connected) {
-                    showError('Not connected to server. Please wait and try again.');
-                    return;
-                }
-                
                 // Send username to server
                 socket.emit('login', { username: username });
                 
-                // Set a timeout in case server doesn't respond
-                const loginTimeout = setTimeout(() => {
-                    showError('Server is not responding. Please try again later.');
-                }, 10000); // 10 second timeout
-                
                 // Wait for server confirmation
                 socket.on('loginSuccess', function(data) {
-                    clearTimeout(loginTimeout);
                     // Store username so game.js can retrieve it
                     localStorage.setItem('username', username);
                     localStorage.setItem('socketId', data.socketId);
-                    // Redirect to game page
-                    window.location.href = 'playgame.html';
+                    // Redirect to lobby page
+                    window.location.href = 'lobby.html';
                 });
             }
         });
