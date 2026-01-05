@@ -45,6 +45,7 @@ const cols = 18
 const gameArea = document.getElementById("game")
 //walls
 
+const boardSize = 18;
 const board = []
 for (let y = 0; y < rows; y++) {
   board[y] = []
