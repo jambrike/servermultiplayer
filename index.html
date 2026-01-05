@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8"  >
+    <title>Cleuro</title>  
+    <style>
+        body{
+            background-color: rgb(26, 26, 26);
+            color:rgb(132, 77, 184);
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            display:flex; justify-content: center;
+
+        }
+        .header{
+        text-align: center;
+        padding: 12 2px;
+        border-radius: 12px;
+        background-color: #121212;
+        border: 1px solid #6b6b6b;
+        align-content: center;
+        min-width: 400px;
+        
+        justify-content: center;
+        }
+        .header h1{
+            font-size: 34px;
+            font-weight: bold;
+        }
+        
+        .wrap{
+            padding: 4px 6px;
+            display:flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .page{
+            padding:12px;
+            width: 500px;
+            height:500px;
+            background-color: #121212;
+            border-radius: 12px;
+            border:1px solid #6b6b6b; display:flex;
+            justify-content: center;
+            
+        }
+        .instructioncard{
+            font-size: 14px;
+            color:white;
+            text-align: center;
+            display:flex;
+            flex-direction: column;
+            align-items: center;
+            gap:25px;
+           
+    
+
+        }
+        .menu-button {
+            padding: 15px 30px;
+            font-size: 24px;
+            color: #979797;
+            background-color: #2d2c2c;
+            border: 2px solid #68137d;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            width: 200px;
+            transition: background-color 0.3s, color 0.3s;
+            text-decoration: underline;
+            display:flex;
+            gap:25px;
+            flex-direction: column;
+            
+        }
+        .menu-button:hover {
+            background: rgba(26, 12, 30, 0.8);
+            transform: scale(1.025);
+            color: white;
+        }
+    </style>
+    </head>
+    <body><div class="wrap">
+        <div class="header">
+<h1>\CLEURO/</h1>
+ </div>
+<div class="page">
+    <div class="instructioncard">
+        <p>Classic Murder mystery game, like the old game Cluedo but now online</p>
+            <a href="login.html"><div class="menu-button"">continue to the crime</div></a>
+            <a href="instructions.html"><div class="menu-button">Instructions</div></a>
+    </div>
+</div>
+</div></body>
+</html>
