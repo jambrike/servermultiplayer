@@ -22,6 +22,26 @@ let currentTurn = 0;
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
+    // Position
+    socket.on('playerInfo', (data) => {
+        const player = players.get(socket.id);
+
+        if (player) {
+            // Update stored position
+            player.x = data.x;
+            player.y = data.y;
+            player.stepsleft = data.stepsleft;
+
+            // Broadcast to all OTHER players
+            socket.broadcast.emit('playerMoved', {
+                socketId: socket.id,
+                username: player.username,
+                x: data.x,
+                y: data.y
+            });
+        }
+    });
+
     // Handle login
     socket.on('login', (data) => {
         console.log('User logged in:', data.username);
