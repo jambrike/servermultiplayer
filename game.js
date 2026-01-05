@@ -1,4 +1,9 @@
 const socket = io('https://cleuro-game.onrender.com');
+///plan for the next couple mins is to make it so when you get into a room you can click on different cards to choose what questions to ask like if it is the guard or zach
+//then make it so when you make final guess you ae sening your answers to the sevrer and listening for win or lose
+//then make it so your position can be updated to other players
+//then make it so the players appear on eachothers screens
+
 
 // Check if user is logged in
 const username = localStorage.getItem('username');
@@ -7,6 +12,13 @@ if (!username) {
 }
 
 console.log(`Playing as: ${username}`);
+
+// Track this player's socket ID (assigned by server when we connect)
+let mySocketId = null;
+
+// Track whether it's currently this player's turn to roll dice
+// Server controls whose turn it is and sends updates
+let isTurn = false;
 
 const suspects=["Janitor","Aunt","Chef","James","Butler","Grandfather"]
 const weapons=["knife","candlestick","revolver","wrench","rope"]
@@ -90,16 +102,75 @@ for (let room in roomTiles) {
   let s = roomTiles[room].spots;
   winningSpots[room] = s[Math.floor(Math.random() * s.length)].name;
 }
+// Dice roll button click handler
 document.getElementById("rolldice").onclick=()=>{
-  const d1=Math.floor(Math.random()*6)+1
-  const d2=Math.floor(Math.random()*6)+1
-  stepsleft=d1+d2
-  //increase per turn
-  rollCount++
-  document.getElementById("stepsleft").textContent=stepsleft  
-  //render again to show steps again
-  render()
+  // First check if it's actually this player's turn
+  // Server validates this too, but we check client-side first for better UX
+  if (!isTurn) {
+    alert("It's not your turn!");
+    return;
+  }
+  
+  // Send dice roll request to server
+  // Server will generate random dice values and broadcast to all players
+  // Format: {type: 'rolldice'} - server expects this message format
+  socket.send(JSON.stringify({type: 'rolldice'}));
 }
+  // Listen for dice roll results from server
+  // Server broadcasts this to ALL players when someone rolls
+  // data contains: {username, d1, d2, socketId}
+  socket.on('diceRolled', (data) => {
+    // Calculate total steps from both dice
+    let steps = data.d1 + data.d2;
+    
+    // Add steps to this player's remaining steps
+    stepsleft += steps;
+    
+    // Increment turn counter
+    rollCount++;
+    
+    // Update the UI to show remaining steps
+    document.getElementById("stepsleft").textContent = stepsleft;
+    
+    // Show roll result message
+    document.getElementById("clue-text").textContent = `You rolled a ${steps}. Move your character!`;
+    document.getElementById("clue-text").style.color = "#4CAF50";
+   });
+
+   // Listen for turn updates from server
+   // Server sends this after each dice roll to rotate turns
+   // data contains: {activePlayerId, username}
+   socket.on('turnUpdate', (data) => {
+    // Check if the active player ID matches our socket ID
+    // If yes, it's our turn. If no, we wait.
+    isTurn = (data.activePlayerId === mySocketId);
+    
+    // Update UI based on whose turn it is
+    if (isTurn) {
+      // It's our turn - show prompt to roll
+      document.getElementById("clue-text").textContent = "It's your turn! Roll the dice.";
+      document.getElementById("clue-text").style.color = "#FFD700";
+    } else {
+      // Someone else's turn - show who's playing
+      document.getElementById("clue-text").textContent = `It's ${data.username}'s turn.`;
+      document.getElementById("clue-text").style.color = "#888";
+    }
+   });
+   
+   // Listen for successful connection to server
+   // This fires when socket.io establishes connection
+   socket.on('connect', () => {
+    // Store our unique socket ID assigned by server
+    // We need this to compare with activePlayerId to know if it's our turn
+    mySocketId = socket.id;
+    console.log('Connected with socket ID:', mySocketId);
+   });
+   
+   // Listen for error messages from server
+   // Server sends these when validation fails (e.g., rolling out of turn)
+   socket.on('error_message', (message) => {
+    alert(message);
+   });
  
 //simeple function to find room by player position
 function RoomAt(x, y) {
@@ -179,6 +250,27 @@ function render(){
 
   for(let y=0;y<rows;y++){
     for(let x=0;x<cols;x++){
+
+      // Draw Other Players
+for (let id in otherPlayers) {
+    let p = otherPlayers[id];
+    if (p.x === x && p.y === y) {
+        let token = createPlayerToken("blue"); // Different color for others
+        cell.appendChild(token);
+    }
+}
+// Helper to keep code clean
+function createPlayerToken(color) {
+    let token = document.createElement("div");
+    token.style.width = "20px";
+    token.style.height = "20px";
+    token.style.background = color;
+    token.style.borderRadius = "50%";
+    token.style.margin = "5px";
+    token.style.boxShadow = "0 0 5px #000";
+    return token;
+}
+
       let cell=document.createElement("div")
       cell.className = "cell";
 
@@ -294,6 +386,13 @@ function caniwalk(targetX, targetY) {
 
 //final guess on button
 document.getElementById("solvebutton").onclick= function() {
+    // Check if it's this player's turn before allowing them to make final guess
+    // Only the player whose turn it is can submit a solution
+    if (!isTurn) {
+      alert("It's not your turn! You can only make a guess on your turn.");
+      return;
+    }
+    
     let gSuspect = prompt("Who is the killer?");
     let gWeapon = prompt("What was the weapon?");
     let gRoom = prompt("In which room?");
@@ -314,3 +413,14 @@ document.getElementById("solvebutton").onclick= function() {
     }
 }
 render()
+// Listen for updates from the server
+socket.on('playerMoved', (data) => {
+    otherPlayers[data.socketId] = data; // Store/update their position
+    render(); // Redraw the board to show them
+});
+
+// Listen for dice roll broadcasts from server
+socket.on('playerRolled', (data) => {
+  document.getElementById("clue-text").textContent = `${data.username} rolled ${data.roll}!`;
+  document.getElementById("clue-text").style.color = "#4CAF50";
+});
