@@ -88,12 +88,40 @@ io.on('connection', (socket) => {
                 case 'rolldice':
                     rolldice(socket);
                     break;
+                case 'startGame':
+                    startGame(socket);
+                    break;
             }
         } catch (error) {
             console.log("Invalid type");
         }
     });
 });
+
+function startGame(socket) {
+    // 1. Convert the Map of players into an array for the turn order
+    playerOrder = Array.from(players.keys());
+
+    // 2. Safety check: Don't start with 0 players
+    if (playerOrder.length === 0) return;
+
+    // 3. Randomize the player order to make it fair
+    playerOrder = playerOrder.sort(() => Math.random() - 0.5);
+
+    // 4. Set the current turn to the first player in the shuffled list
+    currentTurn = 0;
+
+    console.log("Game starting with order:", playerOrder.map(id => players.get(id).username));
+
+    // 5. Emit to EVERYONE that the game has started and provide the initial state
+    io.emit('gameStarted', {
+        order: playerOrder.map(id => ({
+            socketId: id,
+            username: players.get(id).username
+        })),
+        activePlayer: playerOrder[currentTurn]
+    });
+}
 
 function rolldice(socket) {
     // 1. Validation: Is it actually this player's turn?

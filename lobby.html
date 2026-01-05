@@ -94,15 +94,18 @@
             window.location.href = 'login.html';
         } else {
             document.getElementById('username-display').textContent = username;
+            socket.emit('login', { username: username });
         }
         
         // Start game button handler
         document.getElementById('start-game-btn').addEventListener('click', function() {
             // Send start game request to server
-            socket.emit('startGame', { username: username });
+            socket.send(JSON.stringify({ type: 'startGame' }));
             
             // Wait for server confirmation
             socket.on('gameStarted', function(data) {
+                // Save the Player's order
+                localStorage.setItem('gameOrder', JSON.stringify(data.order));
                 // Redirect to game page
                 window.location.href = 'playgame.html';
             });
