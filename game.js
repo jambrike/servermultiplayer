@@ -3,7 +3,6 @@ const socket = io('https://servermultiplayer.onrender.com', {
   withCredentials: false
 });
 
-// --- Initialization & Auth ---
 const username = localStorage.getItem('username');
 if (!username) {
     window.location.href = 'login.html';
@@ -17,7 +16,6 @@ let rollCount = 0;
 let stepsleft = 0;
 const otherPlayers = {}; // Stores { socketId: { x, y, username } }
 
-// --- Game Constants ---
 const suspects = ["Janitor", "Aunt", "Chef", "James", "Butler", "Grandfather"];
 const weapons = ["knife", "candlestick", "revolver", "wrench", "rope"];
 const rooms = ["kitchen", "ballroom", "conservatory", "library", "study"];
