@@ -51,6 +51,11 @@ body{
             }
             .player{
                 background:silver;
+                background-image: url(image/player.png);
+                background-size: cover;
+                background-repeat: no-repeat;
+                background-position: center;
+                
             }
             .room{
                 background: rgba(49, 49, 49, 0.6);
