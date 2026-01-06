@@ -211,14 +211,28 @@ function startGame(socket) {
     console.log("Game starting with order:", playerOrder.map(id => players.get(id).username));
 
     // 5. Emit to EVERYONE that the game has started and provide the initial state
+    if (!solution) {
+        solution = {
+            suspect: randomFrom(suspects),
+            weapon:  randomFrom(weapons),
+            room:    randomFrom(rooms)
+        };
+    }
+
     io.emit('gameStarted', {
         order: playerOrder.map(id => ({
             socketId: id,
             username: players.get(id).username
         })),
-        activePlayer: playerOrder[currentTurn]
+        activePlayer: playerOrder[currentTurn],
+        answer: solution
     });
 }
+const suspects = ["Janitor", "Aunt", "Chef", "James", "Butler", "Grandfather"];
+const weapons  = ["knife", "candlestick", "revolver", "wrench", "rope"];
+const rooms    = ["kitchen", "ballroom", "conservatory", "library", "study"];
+let solution = null;
+function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 function rolldice(socket) {
     // 1. Validation: Is it actually this player's turn?
