@@ -14,9 +14,10 @@ let mySocketId = null;
 let isTurn = false;
 let rollCount = 0;
 let stepsleft = 0;
-const otherPlayers = {}; // Stores { socketId: { x, y, username } }
+const otherPlayers = {}; // Stores { username: { x, y } }
 
 let answer = null;
+let cluelocations = null; // Will be initialized after we get answer from server
 
 const rows = 18;
 const cols = 18;
@@ -28,11 +29,11 @@ const roomTiles = {
         spots: [{ x: 1, y: 1, name: "bin" }, { x: 2, y: 3, name: "rug" }, { x: 0, y: 2, name: "drawer" }]
     },
     ballroom: {
-        x: 6, y: 0, w: 6, h: 5, type: "room", doors: [{ x: 6, y: 4 }, { x: 11, y: 4 }],
+        x: 6, y: 0, w: 6, h: 5, type: "ballroom", doors: [{ x: 6, y: 4 }, { x: 11, y: 4 }],
         spots: [{ x: 7, y: 1, name: "bin" }, { x: 10, y: 3, name: "rug" }, { x: 8, y: 0, name: "drawer" }]
     },
     conservatory: {
-        x: 13, y: 0, w: 5, h: 4, type: "study", doors: [{ x: 13, y: 3 }],
+        x: 13, y: 0, w: 5, h: 4, type: "conservatory", doors: [{ x: 13, y: 3 }],
         spots: [{ x: 14, y: 1, name: "bin" }, { x: 17, y: 1, name: "rug" }, { x: 15, y: 3, name: "drawer" }]
     },
     library: {
@@ -45,64 +46,69 @@ const roomTiles = {
     }
 };
 
-// --- Clue Setup ---
-const roompool = Object.keys(roomTiles);
-const shuffledRooms = roompool.sort(() => 0.5 - Math.random());
-const cluelocations = {
-    suspect: {
-        roomKey: shuffledRooms[0], spot: randomFrom(roomTiles[shuffledRooms[0]].spots).name,
-        sub: `this is ${answer.suspect} item and it has blood stains`
-    },
-    weapon: {
-        roomKey: shuffledRooms[1], spot: randomFrom(roomTiles[shuffledRooms[1]].spots).name,
-        sub: `Its the ${answer.weapons}`
-    },
-    room: {
-        roomKey: shuffledRooms[2], spot: randomFrom(roomTiles[shuffledRooms[2]].spots).name,
-        sub: `Theres some blood in here.`
-    },
-};
-
 // Local player state will be set based on server-assigned spawn
 const startX = parseInt(localStorage.getItem('startX')) || 9;
 const startY = parseInt(localStorage.getItem('startY')) || 9;
 const player = { x: startX, y: startY };
 
+function randomFrom(arr) { 
+    return arr[Math.floor(Math.random() * arr.length)]; 
+}
+
+function initializeClueLocations() {
+    if (!answer) return null;
+    
+    const roompool = Object.keys(roomTiles);
+    const shuffledRooms = roompool.sort(() => 0.5 - Math.random());
+    
+    return {
+        suspect: {
+            roomKey: shuffledRooms[0], 
+            spot: randomFrom(roomTiles[shuffledRooms[0]].spots).name,
+            sub: `this is ${answer.suspect}'s item and it has blood stains`
+        },
+        weapon: {
+            roomKey: shuffledRooms[1], 
+            spot: randomFrom(roomTiles[shuffledRooms[1]].spots).name,
+            sub: `It's the ${answer.weapon}`
+        },
+        room: {
+            roomKey: shuffledRooms[2], 
+            spot: randomFrom(roomTiles[shuffledRooms[2]].spots).name,
+            sub: `There's some blood in here.`
+        }
+    };
+}
+
 // --- Socket Listeners ---
 socket.on('connect', () => {
     console.log('Connected to server with socket ID:', socket.id);
     mySocketId = socket.id;
-    // Update stored socket ID
     localStorage.setItem('socketId', socket.id);
-    // Re-register on game page to ensure server knows us after navigation
     socket.emit('login', { username });
 });
 
-// Receive login confirmation with spawn position
 socket.on('loginSuccess', (data) => {
     console.log('Login success:', data);
-    mySocketId = data.socketId;
     if (typeof data.x === 'number' && typeof data.y === 'number') {
         player.x = data.x;
         player.y = data.y;
-        // Store spawn position
         localStorage.setItem('startX', String(data.x));
         localStorage.setItem('startY', String(data.y));
     }
     render();
 });
 
-// Initial players state
 socket.on('playersState', (players) => {
-    // Reset collection
-    for (const id in otherPlayers) delete otherPlayers[id];
+    for (const username in otherPlayers) delete otherPlayers[username];
+    
     players.forEach(p => {
-        if (p.socketId !== mySocketId) {
-            otherPlayers[p.socketId] = { x: p.x, y: p.y, username: p.username };
+        if (p.username !== username) {
+            otherPlayers[p.username] = { x: p.x, y: p.y };
         } else {
-            // Ensure local player uses server position
             if (typeof p.x === 'number' && typeof p.y === 'number') {
-                player.x = p.x; player.y = p.y;
+                player.x = p.x; 
+                player.y = p.y;
             }
         }
     });
@@ -110,7 +116,8 @@ socket.on('playersState', (players) => {
 });
 
 socket.on('diceRolled', (data) => {
-    if (data.socketId !== mySocketId) return;
+    if (data.username !== username) return;
+    
     let steps = data.d1 + data.d2;
     stepsleft = steps;
     rollCount++;
@@ -120,7 +127,7 @@ socket.on('diceRolled', (data) => {
 });
 
 socket.on('turnUpdate', (data) => {
-    isTurn = (data.activePlayerId === mySocketId);
+    isTurn = (data.activeUsername === username);
     stepsleft = 0;
     document.getElementById("stepsleft").textContent = stepsleft;
     const status = document.getElementById("clue-text");
@@ -134,22 +141,21 @@ socket.on('turnUpdate', (data) => {
 });
 
 socket.on('playerMoved', (data) => {
-    if (data.socketId !== mySocketId) {
-        otherPlayers[data.socketId] = { x: data.x, y: data.y, username: data.username };
+    if (data.username !== username) {
+        otherPlayers[data.username] = { x: data.x, y: data.y };
         render();
     }
 });
 
-// Handle join/leave while on game page
 socket.on('playerJoined', (p) => {
-    if (p.socketId !== mySocketId) {
-        otherPlayers[p.socketId] = { x: p.x, y: p.y, username: p.username };
+    if (p.username !== username) {
+        otherPlayers[p.username] = { x: p.x, y: p.y };
         render();
     }
 });
 
 socket.on('playerLeft', (p) => {
-    delete otherPlayers[p.socketId];
+    delete otherPlayers[p.username];
     render();
 });
 
@@ -159,24 +165,27 @@ socket.on('error_message', (msg) => {
 });
 
 socket.on('gameStarted', (data) => {
-    // data.activePlayer is the socketId of the first player
-    // data.order is the full turn order
-    console.log('Game started/resumed. My socket:', mySocketId, 'Active player:', data.activePlayer);
+    console.log('Game started/resumed. My username:', username, 'Active player:', data.activeUsername);
     console.log('Turn order:', data.order.map(p => p.username));
     
-    isTurn = (data.activePlayer === mySocketId);
+    // Store the answer from server
+    answer = data.answer;
+    console.log('Answer received from server:', answer);
+    
+    // Initialize clue locations now that we have the answer
+    cluelocations = initializeClueLocations();
+    console.log('Clue locations initialized:', cluelocations);
+    
+    isTurn = (data.activeUsername === username);
     
     const status = document.getElementById("clue-text");
     if (isTurn) {
         status.textContent = "It's your turn! Roll the dice.";
         status.style.color = "#FFD700";
     } else {
-        const activePlayer = data.order.find(p => p.socketId === data.activePlayer);
-        status.textContent = `It's ${activePlayer?.username || 'someone'}'s turn.`;
+        status.textContent = `It's ${data.activeUsername}'s turn.`;
         status.style.color = "#888";
     }
-
-    answer = data.answer;
 });
 
 function RoomAt(x, y) {
@@ -239,7 +248,6 @@ socket.on('askResult', (data) => {
     }
 });
 
-// Update current room display in render
 function render() {
     gameArea.innerHTML = "";
     for (let y = 0; y < rows; y++) {
@@ -248,7 +256,6 @@ function render() {
             cell.className = "cell";
             let room = RoomAt(x, y);
 
-            // Door detection
             let isDoor = false;
             for (let key in roomTiles) {
                 if (roomTiles[key].doors.some(d => d.x === x && d.y === y)) {
@@ -291,7 +298,6 @@ function render() {
                 });
             } else cell.classList.add("floor");
 
-            // Render Local Player
             if (player.x === x && player.y === y) {
                 let token = document.createElement("div");
                 token.className = "player-token local";
@@ -300,7 +306,6 @@ function render() {
                 cell.appendChild(token);
             }
 
-            // Render Other Players
             for (let otherUsername in otherPlayers) {
                 let p = otherPlayers[otherUsername];
                 if (p.x === x && p.y === y) {
@@ -314,19 +319,16 @@ function render() {
         }
     }
     
-    // Update current room display
     const currentRoom = RoomAt(player.x, player.y);
     document.getElementById("current-room").textContent = currentRoom ? currentRoom.type : "Hallway";
 }
 
-// --- Event Handlers ---
 document.getElementById("rolldice").onclick = () => {
     if (!isTurn) {
         alert("Not your turn!");
         return;
     }
     console.log('Rolling dice for', username);
-    // Use direct event; server supports both
     socket.emit('rolldice');
 };
 
@@ -349,7 +351,6 @@ document.addEventListener("keydown", e => {
         stepsleft--;
         document.getElementById("stepsleft").textContent = stepsleft;
 
-        // Use server's expected event name
         socket.emit('playerInfo', { x: player.x, y: player.y, username });
 
         let nowInRoom = RoomAt(nx, ny);
@@ -368,20 +369,29 @@ document.addEventListener("keydown", e => {
 
 document.getElementById("solvebutton").onclick = function () {
     if (!isTurn) return alert("Guess only on your turn!");
+    
+    if (!answer) {
+        alert("Game not started yet!");
+        return;
+    }
+    
     let gSuspect = prompt("Killer?");
+    if (!gSuspect) return;
+    
     let gWeapon = prompt("Weapon?");
+    if (!gWeapon) return;
+    
     let gRoom = prompt("Room?");
-    if (answer &&
-        gSuspect.toLowerCase() === answer.suspect.toLowerCase() &&
-        gWeapon.toLowerCase()  === answer.weapon.toLowerCase() &&
-        gRoom.toLowerCase()    === answer.room.toLowerCase()) {
+    if (!gRoom) return;
+    
+    if (gSuspect.toLowerCase() === answer.suspect.toLowerCase() &&
+        gWeapon.toLowerCase() === answer.weapon.toLowerCase() &&
+        gRoom.toLowerCase() === answer.room.toLowerCase()) {
         alert("You won!");
         location.reload();
     } else {
-        alert(`Wrong! Answer: ${answer.suspect}, ${answer.weapons}, ${answer.room}`);
+        alert(`Wrong! Answer: ${answer.suspect}, ${answer.weapon}, ${answer.room}`);
     }
 };
-
-function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 render();
