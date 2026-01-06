@@ -175,3 +175,49 @@ body{
             transform: scale(1.025);
             color: white;
             }
+            .cardpicker {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                padding: 16px;
+                background: #1c1c1c;
+                border: 1px solid #6b6b6b;
+                border-radius: 8px;
+                margin-top: 20px;
+            }
+
+            .cardrow {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .cardrow label {
+                color: rgb(132, 77, 184);
+                font-weight: bold;
+                min-width: 80px;
+            }
+
+            .cardrow select {
+                flex: 1;
+                padding: 8px;
+                background: #2d2c2c;
+                color: #979797;
+                border: 1px solid #68137d;
+                border-radius: 4px;
+                font-size: 14px;
+            }
+
+            #ask-button {
+                padding: 10px 16px;
+                background: #68137d;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+
+            #ask-button:hover {
+                background: #7d1a94;
+            }
