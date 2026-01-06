@@ -1,4 +1,7 @@
-const socket = io('https://cleuro-game.onrender.com');
+const socket = io('https://servermultiplayer.onrender.com', {
+  transports: ['websocket', 'polling'],
+  withCredentials: false
+});
 
 // --- Initialization & Auth ---
 const username = localStorage.getItem('username');
