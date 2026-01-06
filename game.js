@@ -78,22 +78,32 @@ const cluelocations = {
 };
 
 // Local player state will be set based on server-assigned spawn
-const player = { x: 9, y: 9 };
+const startX = parseInt(localStorage.getItem('startX')) || 9;
+const startY = parseInt(localStorage.getItem('startY')) || 9;
+const player = { x: startX, y: startY };
 
 // --- Socket Listeners ---
 socket.on('connect', () => {
+    console.log('Connected to server with socket ID:', socket.id);
     mySocketId = socket.id;
+    // Update stored socket ID
+    localStorage.setItem('socketId', socket.id);
     // Re-register on game page to ensure server knows us after navigation
     socket.emit('login', { username });
 });
 
 // Receive login confirmation with spawn position
 socket.on('loginSuccess', (data) => {
+    console.log('Login success:', data);
+    mySocketId = data.socketId;
     if (typeof data.x === 'number' && typeof data.y === 'number') {
         player.x = data.x;
         player.y = data.y;
+        // Store spawn position
+        localStorage.setItem('startX', String(data.x));
+        localStorage.setItem('startY', String(data.y));
     }
-    // Ask server to send the current players state (server emits automatically on login)
+    render();
 });
 
 // Initial players state
@@ -154,9 +164,17 @@ socket.on('playerLeft', (p) => {
     render();
 });
 
+socket.on('error_message', (msg) => {
+    alert(msg);
+    console.error('Server error:', msg);
+});
+
 socket.on('gameStarted', (data) => {
     // data.activePlayer is the socketId of the first player
     // data.order is the full turn order
+    console.log('Game started/resumed. My socket:', mySocketId, 'Active player:', data.activePlayer);
+    console.log('Turn order:', data.order.map(p => p.username));
+    
     isTurn = (data.activePlayer === mySocketId);
     
     const status = document.getElementById("clue-text");
@@ -168,8 +186,6 @@ socket.on('gameStarted', (data) => {
         status.textContent = `It's ${activePlayer?.username || 'someone'}'s turn.`;
         status.style.color = "#888";
     }
-    
-    console.log("Game started. Turn order:", data.order.map(p => p.username));
 });
 
 // --- Core Functions ---
@@ -267,7 +283,11 @@ function render() {
 
 // --- Event Handlers ---
 document.getElementById("rolldice").onclick = () => {
-    if (!isTurn) return alert("Not your turn!");
+    if (!isTurn) {
+        alert("Not your turn!");
+        return;
+    }
+    console.log('Rolling dice for', username);
     // Use direct event; server supports both
     socket.emit('rolldice');
 };
@@ -304,3 +324,21 @@ document.addEventListener("keydown", e => {
         }
     }
 });
+
+document.getElementById("solvebutton").onclick = function () {
+    if (!isTurn) return alert("Guess only on your turn!");
+    let gSuspect = prompt("Killer?");
+    let gWeapon = prompt("Weapon?");
+    let gRoom = prompt("Room?");
+    if (gSuspect && gWeapon && gRoom && 
+        gSuspect.toLowerCase() === answer.suspect.toLowerCase() && 
+        gWeapon.toLowerCase() === answer.weapons.toLowerCase() && 
+        gRoom.toLowerCase() === answer.room.toLowerCase()) {
+        alert("You won!");
+        location.reload();
+    } else {
+        alert(`Wrong! Answer: ${answer.suspect}, ${answer.weapons}, ${answer.room}`);
+    }
+};
+
+render();
