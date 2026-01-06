@@ -214,6 +214,32 @@ io.on('connection', (socket) => {
         if (!username || username !== playerOrder[currentTurn]) return;
         nextTurn();
     });
+
+    socket.on('askAbout', (data) => {
+        const username = socketToUser.get(socket.id);
+        if (!username) return;
+
+        if (!solution) {
+            socket.emit('error_message', 'Game not started');
+            return;
+        }
+
+        const { suspect, weapon, room } = data;
+        const matches = [];
+
+        if (suspect.toLowerCase() === solution.suspect.toLowerCase()) matches.push('suspect');
+        if (weapon.toLowerCase() === solution.weapon.toLowerCase()) matches.push('weapon');
+        if (room.toLowerCase() === solution.room.toLowerCase()) matches.push('room');
+
+        let result = 'none';
+        if (matches.length > 0) {
+            // Randomly pick one of the matching cards to reveal
+            result = matches[Math.floor(Math.random() * matches.length)];
+        }
+
+        socket.emit('askResult', { result });
+        console.log(`${username} asked about ${suspect}/${weapon}/${room}, result: ${result}`);
+    });
 });
 
 function startGame() {
