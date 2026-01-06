@@ -1,4 +1,4 @@
-const socket = io('https://servermultiplayer.onrender.com', {
+const socket = io({
   transports: ['websocket', 'polling'],
   withCredentials: false
 });
