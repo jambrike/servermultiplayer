@@ -3,10 +3,7 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
   cors: {
-    origin: [
-      'https://servermultiplayer.onrender.com',
-      'https://cleuro-game.onrender.com'
-    ],
+    origin: ['https://servermultiplayer.onrender.com'],
     methods: ['GET', 'POST']
   }
 });
