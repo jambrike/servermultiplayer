@@ -154,6 +154,24 @@ socket.on('playerLeft', (p) => {
     render();
 });
 
+socket.on('gameStarted', (data) => {
+    // data.activePlayer is the socketId of the first player
+    // data.order is the full turn order
+    isTurn = (data.activePlayer === mySocketId);
+    
+    const status = document.getElementById("clue-text");
+    if (isTurn) {
+        status.textContent = "It's your turn! Roll the dice.";
+        status.style.color = "#FFD700";
+    } else {
+        const activePlayer = data.order.find(p => p.socketId === data.activePlayer);
+        status.textContent = `It's ${activePlayer?.username || 'someone'}'s turn.`;
+        status.style.color = "#888";
+    }
+    
+    console.log("Game started. Turn order:", data.order.map(p => p.username));
+});
+
 // --- Core Functions ---
 function RoomAt(x, y) {
     for (let key in roomTiles) {
@@ -286,21 +304,3 @@ document.addEventListener("keydown", e => {
         }
     }
 });
-
-document.getElementById("solvebutton").onclick = function () {
-    if (!isTurn) return alert("Guess only on your turn!");
-    let gSuspect = prompt("Killer?");
-    let gWeapon = prompt("Weapon?");
-    let gRoom = prompt("Room?");
-    if (gSuspect && gWeapon && gRoom && 
-        gSuspect.toLowerCase() === answer.suspect.toLowerCase() && 
-        gWeapon.toLowerCase() === answer.weapons.toLowerCase() && 
-        gRoom.toLowerCase() === answer.room.toLowerCase()) {
-        alert("You won!");
-        location.reload();
-    } else {
-        alert(`Wrong! Answer: ${answer.suspect}, ${answer.weapons}, ${answer.room}`);
-    }
-};
-
-render();
