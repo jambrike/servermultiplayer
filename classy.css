@@ -4,7 +4,7 @@ body{
                 font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 
             }
-            /*gonna do header to put corner box in stop overlp*/
+            /*gonna do header to put corner box in stop overlap*/
             .header{
                 width:100%;
                 padding: 18px; margin-bottom:20px;
@@ -159,7 +159,7 @@ body{
                 background-repeat: no-repeat;
             }
             .pickcard{
-                background: #3c3c3c;
+                background: #2c2c2c;
                 border: 1px solid #0f0f0f;
                 width: auto;
                 height: auto;
@@ -199,7 +199,7 @@ body{
 
             #ask-button {
                 padding: 10px 16px;
-                background: #68137d;
+                background: #3c0d48;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -209,5 +209,5 @@ body{
             }
 
             #ask-button:hover {
-                background: #7d1a94;
+                background: #791d8e;
             }
