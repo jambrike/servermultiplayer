@@ -135,7 +135,7 @@
         // Start game button handler
         document.getElementById('start-game-btn').addEventListener('click', function() {
             // Send start game request to server using emit instead of send
-            socket.emit('startGame');
+            socket.send('startGame');
             
             // Listen for server confirmation once
             socket.once('gameStarted', function(data) {
