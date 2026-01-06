@@ -80,6 +80,10 @@
             <div class="instructioncard">
                 <h2>Lobby</h2>
                 <p>Welcome, <span id="username-display"></span></p>
+                <div style="width:100%;text-align:left;">
+                    <h3>Players in Lobby</h3>
+                    <ul id="players-list" style="list-style:none;padding:0;margin:0;color:white;"></ul>
+                </div>
                 <button class="menu-button" id="start-game-btn">Start Game</button>
             </div>
         </div>
@@ -96,6 +100,37 @@
             document.getElementById('username-display').textContent = username;
             socket.emit('login', { username: username });
         }
+
+        const playersListEl = document.getElementById('players-list');
+
+        function renderPlayers(list) {
+            playersListEl.innerHTML = '';
+            list.forEach(p => {
+                const li = document.createElement('li');
+                li.id = `player-${p.socketId}`;
+                li.textContent = `${p.username} — start at (${p.x}, ${p.y})`;
+                playersListEl.appendChild(li);
+            });
+        }
+
+        // Initial players state
+        socket.on('playersState', (players) => {
+            renderPlayers(players);
+        });
+
+        // When someone joins
+        socket.on('playerJoined', (p) => {
+            const li = document.createElement('li');
+            li.id = `player-${p.socketId}`;
+            li.textContent = `${p.username} — start at (${p.x}, ${p.y})`;
+            playersListEl.appendChild(li);
+        });
+
+        // When someone leaves
+        socket.on('playerLeft', (p) => {
+            const li = document.getElementById(`player-${p.socketId}`);
+            if (li) li.remove();
+        });
         
         // Start game button handler
         document.getElementById('start-game-btn').addEventListener('click', function() {
@@ -106,6 +141,7 @@
             socket.on('gameStarted', function(data) {
                 // Save the Player's order
                 localStorage.setItem('gameOrder', JSON.stringify(data.order));
+                localStorage.setItem('activePlayerId', data.activePlayer);
                 // Redirect to game page
                 window.location.href = 'playgame.html';
             });
@@ -113,4 +149,3 @@
     </script>
     </body>
 </html>
-
