@@ -74,11 +74,40 @@ const cluelocations = {
     },
 };
 
+// Local player state will be set based on server-assigned spawn
 const player = { x: 9, y: 9 };
 
 // --- Socket Listeners ---
 socket.on('connect', () => {
     mySocketId = socket.id;
+    // Re-register on game page to ensure server knows us after navigation
+    socket.emit('login', { username });
+});
+
+// Receive login confirmation with spawn position
+socket.on('loginSuccess', (data) => {
+    if (typeof data.x === 'number' && typeof data.y === 'number') {
+        player.x = data.x;
+        player.y = data.y;
+    }
+    // Ask server to send the current players state (server emits automatically on login)
+});
+
+// Initial players state
+socket.on('playersState', (players) => {
+    // Reset collection
+    for (const id in otherPlayers) delete otherPlayers[id];
+    players.forEach(p => {
+        if (p.socketId !== mySocketId) {
+            otherPlayers[p.socketId] = { x: p.x, y: p.y, username: p.username };
+        } else {
+            // Ensure local player uses server position
+            if (typeof p.x === 'number' && typeof p.y === 'number') {
+                player.x = p.x; player.y = p.y;
+            }
+        }
+    });
+    render();
 });
 
 socket.on('diceRolled', (data) => {
@@ -104,9 +133,22 @@ socket.on('turnUpdate', (data) => {
 
 socket.on('playerMoved', (data) => {
     if (data.socketId !== mySocketId) {
-        otherPlayers[data.socketId] = data;
+        otherPlayers[data.socketId] = { x: data.x, y: data.y, username: data.username };
         render();
     }
+});
+
+// Handle join/leave while on game page
+socket.on('playerJoined', (p) => {
+    if (p.socketId !== mySocketId) {
+        otherPlayers[p.socketId] = { x: p.x, y: p.y, username: p.username };
+        render();
+    }
+});
+
+socket.on('playerLeft', (p) => {
+    delete otherPlayers[p.socketId];
+    render();
 });
 
 // --- Core Functions ---
@@ -205,7 +247,8 @@ function render() {
 // --- Event Handlers ---
 document.getElementById("rolldice").onclick = () => {
     if (!isTurn) return alert("Not your turn!");
-    socket.send(JSON.stringify({ type: 'rolldice' }));
+    // Use direct event; server supports both
+    socket.emit('rolldice');
 };
 
 document.addEventListener("keydown", e => {
@@ -227,7 +270,8 @@ document.addEventListener("keydown", e => {
         stepsleft--;
         document.getElementById("stepsleft").textContent = stepsleft;
 
-        socket.emit('playerinfo', { x: player.x, y: player.y, username });
+        // Use server's expected event name
+        socket.emit('playerInfo', { x: player.x, y: player.y, username });
 
         let nowInRoom = RoomAt(nx, ny);
         render();
