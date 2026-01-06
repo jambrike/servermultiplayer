@@ -25,14 +25,9 @@ io.on('connection', (socket) => {
     // Position
     socket.on('playerInfo', (data) => {
         const player = players.get(socket.id);
-
         if (player) {
-            // Update stored position
             player.x = data.x;
             player.y = data.y;
-            player.stepsleft = data.stepsleft;
-
-            // Broadcast to all OTHER players
             socket.broadcast.emit('playerMoved', {
                 socketId: socket.id,
                 username: player.username,
@@ -102,8 +97,11 @@ function startGame(socket) {
     // 1. Convert the Map of players into an array for the turn order
     playerOrder = Array.from(players.keys());
 
-    // 2. Safety check: Don't start with 0 players
-    if (playerOrder.length === 0) return;
+    // 2. Safety check: Don't start with less than 2 players
+    if (playerOrder.length < 2) {
+        socket.emit('error_message', "Need at least 2 players to start!");
+        return;
+    }
 
     // 3. Randomize the player order to make it fair
     playerOrder = playerOrder.sort(() => Math.random() - 0.5);

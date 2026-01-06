@@ -227,7 +227,7 @@ document.addEventListener("keydown", e => {
         stepsleft--;
         document.getElementById("stepsleft").textContent = stepsleft;
 
-        socket.emit('playerinfo', { x: player.x, y: player.y, username });
+        socket.emit('playerInfo', { x: player.x, y: player.y, username });
 
         let nowInRoom = RoomAt(nx, ny);
         render();
