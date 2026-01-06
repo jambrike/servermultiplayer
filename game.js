@@ -16,20 +16,7 @@ let rollCount = 0;
 let stepsleft = 0;
 const otherPlayers = {}; // Stores { socketId: { x, y, username } }
 
-
-const suspects = ["Janitor", "Aunt", "Chef", "James", "Butler", "Grandfather"];
-const weapons = ["knife", "candlestick", "revolver", "wrench", "rope"];
-const rooms = ["kitchen", "ballroom", "conservatory", "library", "study"];
-
-function randomFrom(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
-
-const answer = {
-    suspect: randomFrom(suspects),
-    weapons: randomFrom(weapons),
-    room: randomFrom(rooms)
-};
+let answer = null;
 
 const rows = 18;
 const cols = 18;
@@ -188,6 +175,8 @@ socket.on('gameStarted', (data) => {
         status.textContent = `It's ${activePlayer?.username || 'someone'}'s turn.`;
         status.style.color = "#888";
     }
+
+    answer = data.answer;
 });
 
 function RoomAt(x, y) {
@@ -334,10 +323,10 @@ document.getElementById("solvebutton").onclick = function () {
     let gSuspect = prompt("Killer?");
     let gWeapon = prompt("Weapon?");
     let gRoom = prompt("Room?");
-    if (gSuspect && gWeapon && gRoom && 
-        gSuspect.toLowerCase() === answer.suspect.toLowerCase() && 
-        gWeapon.toLowerCase() === answer.weapons.toLowerCase() && 
-        gRoom.toLowerCase() === answer.room.toLowerCase()) {
+    if (answer &&
+        gSuspect.toLowerCase() === answer.suspect.toLowerCase() &&
+        gWeapon.toLowerCase()  === answer.weapon.toLowerCase() &&
+        gRoom.toLowerCase()    === answer.room.toLowerCase()) {
         alert("You won!");
         location.reload();
     } else {
