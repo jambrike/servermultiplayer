@@ -152,7 +152,7 @@ body{
             }
             .door{
                 background: rgb(111, 68, 68);
-                background-image: url(door.png);
+                background-image: url(image/door.png);
                 background-position: center;
                 background-size: cover;
                 background-repeat: no-repeat;
