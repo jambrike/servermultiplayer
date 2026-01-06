@@ -1,7 +1,15 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const io = require('socket.io')(http, {
+  cors: {
+    origin: [
+      'https://servermultiplayer.onrender.com',
+      'https://cleuro-game.onrender.com'
+    ],
+    methods: ['GET', 'POST']
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 
