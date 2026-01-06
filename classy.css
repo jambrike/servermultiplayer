@@ -222,6 +222,7 @@ body{
     flex: 0 0 250px;
     height: fit-content;
     margin-top: 60px; /* Make space for the title */
+    right:20px;
 }
 
 .pickcard{
