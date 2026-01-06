@@ -28,7 +28,7 @@ const spawnPositions = [
     { x: 7 ,y: 7},
     { x: 9, y: 9},
     { x: 3, y: 5 },
-    { x: 16, y: 16 },
+    { x: 5, y: 9},
     { x: 9, y: 0 },
     { x: 0, y: 9 },
     { x: 17, y: 9 },
@@ -138,6 +138,9 @@ io.on('connection', (socket) => {
                 })),
                 activePlayer: playerOrder[currentTurn]
             });
+        } else if (players.size >= 2) {
+            // Auto-start when at least 2 players are present and no game running
+            startGame(socket);
         }
     });
 
@@ -146,10 +149,18 @@ io.on('connection', (socket) => {
         const player = players.get(socket.id);
         if (player) {
             console.log('User disconnected:', player.username, '(but may reconnect)');
-            // Don't immediately delete - they might be navigating to game page
-            // We'll only delete if they don't reconnect within a reasonable time
-            // For now, just notify others but keep the player in the system
-            socket.broadcast.emit('playerDisconnected', {
+            const idx = playerOrder.indexOf(socket.id);
+            if (idx !== -1) {
+                playerOrder.splice(idx, 1);
+                if (currentTurn >= playerOrder.length) currentTurn = 0;
+                if (playerOrder.length) {
+                    io.emit('turnUpdate', {
+                        activePlayerId: playerOrder[currentTurn],
+                        username: players.get(playerOrder[currentTurn])?.username
+                    });
+                }
+            }
+            io.emit('playerLeft', {
                 username: player.username,
                 socketId: socket.id
             });
@@ -176,6 +187,11 @@ io.on('connection', (socket) => {
     // Also support direct event for rolling dice
     socket.on('rolldice', () => {
         rolldice(socket);
+    });
+
+    socket.on('endTurn', () => {
+        if (socket.id !== playerOrder[currentTurn]) return;
+        nextTurn();
     });
 });
 
@@ -222,9 +238,6 @@ function rolldice(socket) {
         d2: d2,
         socketId: socket.id
     });
-
-    // 4. Move to next turn AFTER dice is rolled
-    nextTurn();
 }
 
 function nextTurn() {
