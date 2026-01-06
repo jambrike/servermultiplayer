@@ -113,6 +113,11 @@
                     // Store username so game.js can retrieve it
                     localStorage.setItem('username', username);
                     localStorage.setItem('socketId', data.socketId);
+                    // Store assigned starting position for convenience
+                    if (typeof data.x === 'number' && typeof data.y === 'number') {
+                        localStorage.setItem('startX', String(data.x));
+                        localStorage.setItem('startY', String(data.y));
+                    }
                     // Redirect to lobby page
                     window.location.href = 'lobby.html';
                 });
