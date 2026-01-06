@@ -3,7 +3,7 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
   cors: {
-    origin: ['https://servermultiplayer.onrender.com'],
+    origin: '*',
     methods: ['GET', 'POST']
   }
 });
@@ -63,25 +63,52 @@ io.on('connection', (socket) => {
     socket.on('login', (data) => {
         console.log('User logged in:', data.username);
 
-        // Assign a spawn based on join order
-        const index = players.size % spawnPositions.length;
-        const spawn = spawnPositions[index];
+        // Check if this username is already in the game (reconnection)
+        let existingPlayer = null;
+        let oldSocketId = null;
+        for (let [id, p] of players.entries()) {
+            if (p.username === data.username) {
+                existingPlayer = p;
+                oldSocketId = id;
+                break;
+            }
+        }
 
-        // Store player info
-        players.set(socket.id, {
-            username: data.username,
-            socketId: socket.id,
-            x: spawn.x,
-            y: spawn.y,
-            spawnIndex: index
-        });
+        if (existingPlayer) {
+            // Reconnection - update socket ID
+            console.log(`${data.username} reconnected with new socket ID`);
+            players.delete(oldSocketId);
+            existingPlayer.socketId = socket.id;
+            players.set(socket.id, existingPlayer);
+            
+            // Update turn order if game has started
+            const orderIndex = playerOrder.indexOf(oldSocketId);
+            if (orderIndex !== -1) {
+                playerOrder[orderIndex] = socket.id;
+            }
+        } else {
+            // New player - assign a spawn based on join order
+            const index = players.size % spawnPositions.length;
+            const spawn = spawnPositions[index];
+
+            // Store player info
+            players.set(socket.id, {
+                username: data.username,
+                socketId: socket.id,
+                x: spawn.x,
+                y: spawn.y,
+                spawnIndex: index
+            });
+        }
+
+        const playerData = players.get(socket.id);
 
         // Send confirmation back to client (with starting position)
         socket.emit('loginSuccess', {
             socketId: socket.id,
-            username: data.username,
-            x: spawn.x,
-            y: spawn.y
+            username: playerData.username,
+            x: playerData.x,
+            y: playerData.y
         });
 
         // Send current players state to the newly joined client
@@ -92,24 +119,37 @@ io.on('connection', (socket) => {
             y: p.y
         })));
 
-        // Notify other players
-        socket.broadcast.emit('playerJoined', {
-            username: data.username,
-            socketId: socket.id,
-            x: spawn.x,
-            y: spawn.y
-        });
+        // Notify other players (only if new player)
+        if (!existingPlayer) {
+            socket.broadcast.emit('playerJoined', {
+                username: playerData.username,
+                socketId: socket.id,
+                x: playerData.x,
+                y: playerData.y
+            });
+        }
+
+        // If game has started, send current turn info
+        if (playerOrder.length > 0) {
+            socket.emit('gameStarted', {
+                order: playerOrder.map(id => ({
+                    socketId: id,
+                    username: players.get(id) ? players.get(id).username : 'Unknown'
+                })),
+                activePlayer: playerOrder[currentTurn]
+            });
+        }
     });
 
     // Handle disconnect
     socket.on('disconnect', () => {
         const player = players.get(socket.id);
         if (player) {
-            console.log('User disconnected:', player.username);
-            players.delete(socket.id);
-
-            // Notify other players
-            socket.broadcast.emit('playerLeft', {
+            console.log('User disconnected:', player.username, '(but may reconnect)');
+            // Don't immediately delete - they might be navigating to game page
+            // We'll only delete if they don't reconnect within a reasonable time
+            // For now, just notify others but keep the player in the system
+            socket.broadcast.emit('playerDisconnected', {
                 username: player.username,
                 socketId: socket.id
             });
