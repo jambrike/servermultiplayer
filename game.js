@@ -16,6 +16,7 @@ let rollCount = 0;
 let stepsleft = 0;
 const otherPlayers = {}; // Stores { socketId: { x, y, username } }
 
+
 const suspects = ["Janitor", "Aunt", "Chef", "James", "Butler", "Grandfather"];
 const weapons = ["knife", "candlestick", "revolver", "wrench", "rope"];
 const rooms = ["kitchen", "ballroom", "conservatory", "library", "study"];
@@ -122,8 +123,9 @@ socket.on('playersState', (players) => {
 });
 
 socket.on('diceRolled', (data) => {
+    if (data.socketId !== mySocketId) return;
     let steps = data.d1 + data.d2;
-    stepsleft += steps;
+    stepsleft = steps;
     rollCount++;
     document.getElementById("stepsleft").textContent = stepsleft;
     document.getElementById("clue-text").textContent = `You rolled a ${steps}. Move!`;
@@ -132,6 +134,8 @@ socket.on('diceRolled', (data) => {
 
 socket.on('turnUpdate', (data) => {
     isTurn = (data.activePlayerId === mySocketId);
+    stepsleft = 0;
+    document.getElementById("stepsleft").textContent = stepsleft;
     const status = document.getElementById("clue-text");
     if (isTurn) {
         status.textContent = "It's your turn! Roll the dice.";
@@ -186,7 +190,6 @@ socket.on('gameStarted', (data) => {
     }
 });
 
-// --- Core Functions ---
 function RoomAt(x, y) {
     for (let key in roomTiles) {
         let r = roomTiles[key];
@@ -291,7 +294,7 @@ document.getElementById("rolldice").onclick = () => {
 };
 
 document.addEventListener("keydown", e => {
-    if (stepsleft <= 0) return;
+    if (!isTurn || stepsleft <= 0) return;
     let dx = 0, dy = 0;
     if (e.key === "ArrowUp") dy = -1;
     if (e.key === "ArrowDown") dy = 1;
@@ -318,7 +321,10 @@ document.addEventListener("keydown", e => {
         if (nowInRoom && !wasInRoom) {
             stepsleft = 0;
             document.getElementById("stepsleft").textContent = 0;
+            socket.emit('endTurn');
             setTimeout(() => alert("Search the " + nowInRoom.type + " for clues!"), 100);
+        } else if (stepsleft === 0) {
+            socket.emit('endTurn');
         }
     }
 });
