@@ -25,9 +25,9 @@ let currentTurn = 0;
 
 // Predefined spawn positions on the board
 const spawnPositions = [
-    { x: 1, y: 1 },
-    { x: 16, y: 1 },
-    { x: 1, y: 16 },
+    { x: 7 ,y: 7},
+    { x: 9, y: 9},
+    { x: 3, y: 5 },
     { x: 16, y: 16 },
     { x: 9, y: 0 },
     { x: 0, y: 9 },
