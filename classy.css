@@ -1,192 +1,177 @@
-body {
-    background-color: rgb(49, 27, 50);
-    font-size: 12px;
-    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-}
+body{
+                background-color: rgb(49, 27, 50);
+                font-size: 12px;
+                font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 
-/*gonna do header to put corner box in stop overlap*/
-.header {
-    width: 100%;
-    padding: 18px;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #4b2b57;
-}
-
-.header h1 {
-    margin: 0;
-    font-size: 36px;
-    color: white;
-}
-
-.header h2 {
-    margin: 0;
-    font-size: 18px;
-}
-
-.wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    min-height: 100vh;
-    padding: 20px;
-    box-sizing: border-box;
-}
-
-#game {
-    display: grid;
-
-    /*50x30*/
-    /*18by18 in the end one thousand 500 would be too much to load and manage*/
-    grid-template-columns: repeat(18, 1fr);
-    grid-template-rows: repeat(18, 1fr);
-    background: #111;
-
-    justify-content: center;
-    align-content: center;
-
-    gap: 1px;
-}
-
-.cell {
-    border: 1px solid #222;
-    background: #1c1c1c;
-    width: 32px;
-    height: 32px;
-    box-sizing: border-box;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.player {
-    background: silver;
-}
-
-.room {
-    background: rgba(49, 49, 49, 0.6);
-    border: 2px solid rgb(70, 70, 70);
-    box-sizing: border-box;
-}
-
-.floor {
-    background-image: url(image/woodflooring.png);
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
-}
-
-.library {
-    background-image: url(image/books.png);
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
-}
-
-.ballroom {
-    background-image: url(image/livingroom.png);
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
-}
-
-.kitchen {
-    background-image: url(image/kitchenmarble.png);
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
-}
-
-.study {
-    /*using for both*/
-    background-image: url(image/studyroom.png);
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;
-}
-
-.subtitle {
-    width: 100%;
-    text-align: center;
-    font-family: 'Courier New', Courier, monospace;
-    min-height: 20px;
-    margin-top: 5px;
-    padding: 10px;
-    border-top: 2px solid #444;
-    color: #ffffff;
-}
-
-#detectivecard {
-    color: none;
-}
-
-#solvebutton {
-    /*not as class dumby*/
-    background: red;
-    color: white;
-    cursor: pointer;
-    padding: 8px 15px;
-    margin-top: 8px;
-    border-radius: 6px;
-}
+            }
+            /*gonna do header to put corner box in stop overlap*/
+            .header{
+                width:100%;
+                padding: 18px; margin-bottom:20px;
+                border-bottom: 2px solid #4b2b57;
+            }
+            .header h1{
+                margin:0; font-size:36px; 
+                color:white;
 
 
+            }
+            .header h2{
+                margin:0; font-size: 18px;
+            }
+        .wrapper{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            }
+            #game {
+                display: grid;
 
-#cornerbox {
-    position: static;
-    top: 20px;
-    right: 20px;
-    background: #222;
-    padding: 10px 15px;
-    border-radius: 8px;
-    text-align: center;
-    color: #eee;
-    align-items: center;
-    flex-direction: column;
-    display: flex;
-}
+                /*50x30*//*18by18 in the end one thousand 500 would be too much to load and manage*/
+                grid-template-columns: repeat(18, 1fr);
+                grid-template-rows: repeat(18, 1fr);
+                background: #111;
 
-.roomoverlay {
-    /*player move free*/
-    pointer-events: none;
-}
+                justify-content: center;
+                align-content: center;
 
-#rolldice {
-    display: block;
-    margin-bottom: 8px;
-    padding: 5px 10px;
-    cursor: pointer;
-}
+                gap:1px;
+            }
+            .cell{
+                border:1px solid #222;
+                background:#1c1c1c;
+                width:32px;height:32px;
+                box-sizing: border-box;
 
-.fullscreen {
-    width: 100vw;
-    height: 100vh;
-    position: fixed;
-    top: 0;
-    left: 0;
-    background: black;
-    color: red;
-    z-index: 85;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
+                display:flex; align-items: center; justify-content: center;
+            }
+            .player{
+                background:silver;
+            }
+            .room{
+                background: rgba(49, 49, 49, 0.6);
+                border: 2px solid rgb(70, 70, 70);
+                box-sizing: border-box;
+            }
+            .floor{
+                background-image: url(image/woodflooring.png);
+                background-size: cover;
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: cover;
 
-.player {
-    z-index: 20;
-}
+            }
+            .library{
+                background-image: url(image/books.png);
+                background-size: cover;
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: cover;
+                
+            }
+            .ballroom{
+                background-image: url(image/livingroom.png);
+                background-size: cover;
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: cover;
+            }   
+            .kitchen{
+                background-image: url(image/kitchenmarble.png);
+                background-size: cover;
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: cover;
+            }
+            .study{/*using for both*/
+                background-image: url(image/studyroom.png);
+                background-size: cover;
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: cover;
+            }
+            .subtitle{
+                width: 100%;
+                text-align: center; font-family: 'Courier New', Courier, monospace;
+                min-height: 20px; margin-top: 5px;
+                padding: 10px; border-top: 2px solid #444;
+                font-size: 18px;
+                color:#ffffff;
+            }
 
-.door {
-    background: rgb(111, 68, 68);
-    background-image: url(image/door.png);
-    background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
-}
+            #detectivecard{
+                color:none;
+            }
+            #solvebutton{ /*not as class dumby*/
+                background: red;
+                color: white;
+                cursor:pointer;
+                padding: 8px 15px;
+                margin-top: 8px;        
+                border-radius: 6px;
+            }
+            
+
+
+            #cornerbox{
+                position: static;
+                top: 20px;
+                right: 20px;
+                background: #222;
+                padding: 10px 15px;
+                border-radius: 8px;
+                text-align: center;
+                color: #eee;
+                align-items: center;
+                flex-direction: column;
+                display: flex;
+            }
+            .roomoverlay{/*player move free*/
+                pointer-events: none;
+            }
+            #rolldice{
+                display:block;
+                margin-bottom: 8px;
+                padding:5px 10px;
+                cursor:pointer;
+            }
+            .fullscreen{
+                width:100vw; height:100vh;
+                position: fixed;
+                top:0;left:0;
+                background: black; color:red;
+                z-index: 85;
+                display: flex; flex-direction: column;
+                align-items: center; justify-content: center;
+            }
+            .player{
+                z-index: 20;
+            }
+            .door{
+                background: rgb(111, 68, 68);
+                background-image: url(image/door.png);
+                background-position: center;
+                background-size: cover;
+                background-repeat: no-repeat;
+            }
+            .pickcard{
+                background: #3c3c3c;
+                border: 1px solid #0f0f0f;
+                grid-row: auto;
+                grid-column: auto;
+                width: 60px;
+                height: 60px;
+                display:none;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+            }
+            .pickcard::shadow{
+            background: rgba(27, 27, 27, 0.8);
+            transform: scale(1.025);
+            color: white;
+            }
