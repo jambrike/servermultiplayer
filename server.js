@@ -36,7 +36,7 @@ const spawnPositions = [
     { x: 9, y: 17 }
 ];
 
-const suspects = ["Janitor", "Aunt", "Chef", "James", "Butler", "Grandfather"];
+const suspects = ["Gardener", "Aunt", "Chef", "Zach", "Banker", "Butler"];
 const weapons = ["knife", "candlestick", "revolver", "wrench", "rope"];
 const rooms = ["kitchen", "ballroom", "conservatory", "library", "study"];
 let solution = null;
