@@ -10,11 +10,10 @@ if (!username) {
 
 console.log(`Playing as: ${username}`);
 
-let mySocketId = null;
 let isTurn = false;
 let rollCount = 0;
 let stepsleft = 0;
-const otherPlayers = {}; // Stores { socketId: { x, y, username } }
+const otherPlayers = {}; // Stores { username: { x, y } }
 
 let answer = null;
 
@@ -68,12 +67,13 @@ const startX = parseInt(localStorage.getItem('startX')) || 9;
 const startY = parseInt(localStorage.getItem('startY')) || 9;
 const player = { x: startX, y: startY };
 
+function randomFrom(arr) { 
+    return arr[Math.floor(Math.random() * arr.length)]; 
+}
+
 // --- Socket Listeners ---
 socket.on('connect', () => {
     console.log('Connected to server with socket ID:', socket.id);
-    mySocketId = socket.id;
-    // Update stored socket ID
-    localStorage.setItem('socketId', socket.id);
     // Re-register on game page to ensure server knows us after navigation
     socket.emit('login', { username });
 });
@@ -81,7 +81,6 @@ socket.on('connect', () => {
 // Receive login confirmation with spawn position
 socket.on('loginSuccess', (data) => {
     console.log('Login success:', data);
-    mySocketId = data.socketId;
     if (typeof data.x === 'number' && typeof data.y === 'number') {
         player.x = data.x;
         player.y = data.y;
@@ -95,10 +94,11 @@ socket.on('loginSuccess', (data) => {
 // Initial players state
 socket.on('playersState', (players) => {
     // Reset collection
-    for (const id in otherPlayers) delete otherPlayers[id];
+    for (const username in otherPlayers) delete otherPlayers[username];
+    
     players.forEach(p => {
-        if (p.socketId !== mySocketId) {
-            otherPlayers[p.socketId] = { x: p.x, y: p.y, username: p.username };
+        if (p.username !== username) {
+            otherPlayers[p.username] = { x: p.x, y: p.y };
         } else {
             // Ensure local player uses server position
             if (typeof p.x === 'number' && typeof p.y === 'number') {
@@ -110,7 +110,8 @@ socket.on('playersState', (players) => {
 });
 
 socket.on('diceRolled', (data) => {
-    if (data.socketId !== mySocketId) return;
+    if (data.username !== username) return;
+    
     let steps = data.d1 + data.d2;
     stepsleft = steps;
     rollCount++;
@@ -120,7 +121,7 @@ socket.on('diceRolled', (data) => {
 });
 
 socket.on('turnUpdate', (data) => {
-    isTurn = (data.activePlayerId === mySocketId);
+    isTurn = (data.activeUsername === username);
     stepsleft = 0;
     document.getElementById("stepsleft").textContent = stepsleft;
     const status = document.getElementById("clue-text");
@@ -134,22 +135,22 @@ socket.on('turnUpdate', (data) => {
 });
 
 socket.on('playerMoved', (data) => {
-    if (data.socketId !== mySocketId) {
-        otherPlayers[data.socketId] = { x: data.x, y: data.y, username: data.username };
+    if (data.username !== username) {
+        otherPlayers[data.username] = { x: data.x, y: data.y };
         render();
     }
 });
 
 // Handle join/leave while on game page
 socket.on('playerJoined', (p) => {
-    if (p.socketId !== mySocketId) {
-        otherPlayers[p.socketId] = { x: p.x, y: p.y, username: p.username };
+    if (p.username !== username) {
+        otherPlayers[p.username] = { x: p.x, y: p.y };
         render();
     }
 });
 
 socket.on('playerLeft', (p) => {
-    delete otherPlayers[p.socketId];
+    delete otherPlayers[p.username];
     render();
 });
 
@@ -159,20 +160,19 @@ socket.on('error_message', (msg) => {
 });
 
 socket.on('gameStarted', (data) => {
-    // data.activePlayer is the socketId of the first player
+    // data.activeUsername is the username of the first player
     // data.order is the full turn order
-    console.log('Game started/resumed. My socket:', mySocketId, 'Active player:', data.activePlayer);
+    console.log('Game started/resumed. My username:', username, 'Active player:', data.activeUsername);
     console.log('Turn order:', data.order.map(p => p.username));
     
-    isTurn = (data.activePlayer === mySocketId);
+    isTurn = (data.activeUsername === username);
     
     const status = document.getElementById("clue-text");
     if (isTurn) {
         status.textContent = "It's your turn! Roll the dice.";
         status.style.color = "#FFD700";
     } else {
-        const activePlayer = data.order.find(p => p.socketId === data.activePlayer);
-        status.textContent = `It's ${activePlayer?.username || 'someone'}'s turn.`;
+        status.textContent = `It's ${data.activeUsername}'s turn.`;
         status.style.color = "#888";
     }
 
@@ -251,18 +251,19 @@ function render() {
             // Render Local Player
             if (player.x === x && player.y === y) {
                 let token = document.createElement("div");
-                token.className = "player-token local"; // Add CSS for .local { background: red; }
+                token.className = "player-token local";
                 token.style.cssText = "width:20px;height:20px;background:red;border-radius:50%;margin:5px;box-shadow:0 0 5px #000;";
+                token.title = username;
                 cell.appendChild(token);
             }
 
             // Render Other Players
-            for (let id in otherPlayers) {
-                let p = otherPlayers[id];
+            for (let otherUsername in otherPlayers) {
+                let p = otherPlayers[otherUsername];
                 if (p.x === x && p.y === y) {
                     let oToken = document.createElement("div");
                     oToken.style.cssText = "width:20px;height:20px;background:purple;border-radius:50%;margin:5px;box-shadow:0 0 5px #000;";
-                    oToken.title = p.username;
+                    oToken.title = otherUsername;
                     cell.appendChild(oToken);
                 }
             }
@@ -278,7 +279,6 @@ document.getElementById("rolldice").onclick = () => {
         return;
     }
     console.log('Rolling dice for', username);
-    // Use direct event; server supports both
     socket.emit('rolldice');
 };
 
@@ -330,7 +330,7 @@ document.getElementById("solvebutton").onclick = function () {
         alert("You won!");
         location.reload();
     } else {
-        alert(`Wrong! Answer: ${answer.suspect}, ${answer.weapons}, ${answer.room}`);
+        alert(`Wrong! Answer: ${answer.suspect}, ${answer.weapon}, ${answer.room}`);
     }
 };
 

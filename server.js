@@ -18,22 +18,30 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/login.html');
 });
 
-// Store connected players
-const players = new Map();
-let playerOrder = [];
+// Store connected players by username
+const players = new Map(); // Key: username, Value: { x, y, socketId, ... }
+const socketToUser = new Map(); // Key: socketId, Value: username
+let playerOrder = []; // Array of usernames in turn order
 let currentTurn = 0;
 
 // Predefined spawn positions on the board
 const spawnPositions = [
-    { x: 7 ,y: 7},
-    { x: 9, y: 9},
+    { x: 7, y: 7 },
+    { x: 9, y: 9 },
     { x: 3, y: 5 },
-    { x: 5, y: 9},
+    { x: 5, y: 9 },
     { x: 9, y: 0 },
     { x: 0, y: 9 },
     { x: 17, y: 9 },
     { x: 9, y: 17 }
 ];
+
+const suspects = ["Janitor", "Aunt", "Chef", "James", "Butler", "Grandfather"];
+const weapons = ["knife", "candlestick", "revolver", "wrench", "rope"];
+const rooms = ["kitchen", "ballroom", "conservatory", "library", "study"];
+let solution = null;
+
+function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
@@ -41,18 +49,18 @@ io.on('connection', (socket) => {
 
     // Position update from clients
     socket.on('playerInfo', (data) => {
-        const player = players.get(socket.id);
+        const username = socketToUser.get(socket.id);
+        if (!username) return;
 
+        const player = players.get(username);
         if (player) {
             // Update stored position
             player.x = data.x;
             player.y = data.y;
-            player.stepsleft = data.stepsleft;
 
             // Broadcast to all OTHER players
             socket.broadcast.emit('playerMoved', {
-                socketId: socket.id,
-                username: player.username,
+                username: username,
                 x: data.x,
                 y: data.y
             });
@@ -64,27 +72,23 @@ io.on('connection', (socket) => {
         console.log('User logged in:', data.username);
 
         // Check if this username is already in the game (reconnection)
-        let existingPlayer = null;
-        let oldSocketId = null;
-        for (let [id, p] of players.entries()) {
-            if (p.username === data.username) {
-                existingPlayer = p;
-                oldSocketId = id;
-                break;
-            }
-        }
+        const existingPlayer = players.get(data.username);
 
         if (existingPlayer) {
             // Reconnection - update socket ID
             console.log(`${data.username} reconnected with new socket ID`);
-            players.delete(oldSocketId);
+            
+            // Remove old socket mapping if exists
+            socketToUser.delete(existingPlayer.socketId);
+            
+            // Update player's socketId
             existingPlayer.socketId = socket.id;
-            players.set(socket.id, existingPlayer);
             
             // Update turn order if game has started
-            const orderIndex = playerOrder.indexOf(oldSocketId);
+            const orderIndex = playerOrder.indexOf(data.username);
             if (orderIndex !== -1) {
-                playerOrder[orderIndex] = socket.id;
+                // Player already in turn order, keep their position
+                console.log(`${data.username} maintained turn position ${orderIndex}`);
             }
         } else {
             // New player - assign a spawn based on join order
@@ -92,20 +96,26 @@ io.on('connection', (socket) => {
             const spawn = spawnPositions[index];
 
             // Store player info
-            players.set(socket.id, {
+            players.set(data.username, {
                 username: data.username,
                 socketId: socket.id,
                 x: spawn.x,
                 y: spawn.y,
                 spawnIndex: index
             });
+
+            // Add to turn order if game hasn't started yet
+            if (playerOrder.length === 0) {
+                playerOrder.push(data.username);
+            }
         }
 
-        const playerData = players.get(socket.id);
+        // Update socket to username mapping
+        socketToUser.set(socket.id, data.username);
+        const playerData = players.get(data.username);
 
         // Send confirmation back to client (with starting position)
         socket.emit('loginSuccess', {
-            socketId: socket.id,
             username: playerData.username,
             x: playerData.x,
             y: playerData.y
@@ -113,7 +123,6 @@ io.on('connection', (socket) => {
 
         // Send current players state to the newly joined client
         socket.emit('playersState', Array.from(players.values()).map(p => ({
-            socketId: p.socketId,
             username: p.username,
             x: p.x,
             y: p.y
@@ -123,47 +132,58 @@ io.on('connection', (socket) => {
         if (!existingPlayer) {
             socket.broadcast.emit('playerJoined', {
                 username: playerData.username,
-                socketId: socket.id,
                 x: playerData.x,
                 y: playerData.y
             });
         }
 
         // If game has started, send current turn info
-        if (playerOrder.length > 0) {
+        if (playerOrder.length > 0 && solution) {
             socket.emit('gameStarted', {
-                order: playerOrder.map(id => ({
-                    socketId: id,
-                    username: players.get(id) ? players.get(id).username : 'Unknown'
+                order: playerOrder.map(uname => ({
+                    username: uname
                 })),
-                activePlayer: playerOrder[currentTurn]
+                activeUsername: playerOrder[currentTurn],
+                answer: solution
             });
-        } else if (players.size >= 2) {
+        } else if (players.size >= 2 && !solution) {
             // Auto-start when at least 2 players are present and no game running
-            startGame(socket);
+            startGame();
         }
     });
 
     // Handle disconnect
     socket.on('disconnect', () => {
-        const player = players.get(socket.id);
-        if (player) {
-            console.log('User disconnected:', player.username, '(but may reconnect)');
-            const idx = playerOrder.indexOf(socket.id);
-            if (idx !== -1) {
-                playerOrder.splice(idx, 1);
-                if (currentTurn >= playerOrder.length) currentTurn = 0;
-                if (playerOrder.length) {
-                    io.emit('turnUpdate', {
-                        activePlayerId: playerOrder[currentTurn],
-                        username: players.get(playerOrder[currentTurn])?.username
-                    });
+        const username = socketToUser.get(socket.id);
+        if (username) {
+            console.log('User disconnected:', username);
+            
+            // Remove socket mapping
+            socketToUser.delete(socket.id);
+            
+            // Check if player has other active connections
+            const player = players.get(username);
+            if (player && player.socketId === socket.id) {
+                // This was the primary connection
+                player.socketId = null; // Mark as disconnected but keep in game
+                
+                // Only remove from turn order if no reconnection
+                const idx = playerOrder.indexOf(username);
+                if (idx !== -1) {
+                    // Keep player in turn order for potential reconnection
+                    console.log(`${username} kept in turn order at position ${idx}`);
+                    
+                    // Skip turn if it's their turn
+                    if (idx === currentTurn && playerOrder.length > 0) {
+                        nextTurn();
+                    }
                 }
+                
+                // Notify other players
+                io.emit('playerLeft', {
+                    username: username
+                });
             }
-            io.emit('playerLeft', {
-                username: player.username,
-                socketId: socket.id
-            });
         }
     });
 
@@ -176,7 +196,7 @@ io.on('connection', (socket) => {
                     rolldice(socket);
                     break;
                 case 'startGame':
-                    startGame(socket);
+                    startGame();
                     break;
             }
         } catch (error) {
@@ -190,15 +210,16 @@ io.on('connection', (socket) => {
     });
 
     socket.on('endTurn', () => {
-        if (socket.id !== playerOrder[currentTurn]) return;
+        const username = socketToUser.get(socket.id);
+        if (!username || username !== playerOrder[currentTurn]) return;
         nextTurn();
     });
 });
 
-function startGame(socket) {
-    // 1. Convert the Map of players into an array for the turn order
+function startGame() {
+    // 1. Get all usernames
     playerOrder = Array.from(players.keys());
-
+    
     // 2. Safety check: Don't start with 0 players
     if (playerOrder.length === 0) return;
 
@@ -208,35 +229,43 @@ function startGame(socket) {
     // 4. Set the current turn to the first player in the shuffled list
     currentTurn = 0;
 
-    console.log("Game starting with order:", playerOrder.map(id => players.get(id).username));
+    console.log("Game starting with order:", playerOrder);
 
-    // 5. Emit to EVERYONE that the game has started and provide the initial state
+    // 5. Generate solution if not exists
     if (!solution) {
         solution = {
             suspect: randomFrom(suspects),
-            weapon:  randomFrom(weapons),
-            room:    randomFrom(rooms)
+            weapon: randomFrom(weapons),
+            room: randomFrom(rooms)
         };
+        console.log("Solution generated:", solution);
     }
 
+    // 6. Emit to EVERYONE that the game has started
     io.emit('gameStarted', {
-        order: playerOrder.map(id => ({
-            socketId: id,
-            username: players.get(id).username
+        order: playerOrder.map(username => ({
+            username: username
         })),
-        activePlayer: playerOrder[currentTurn],
+        activeUsername: playerOrder[currentTurn],
         answer: solution
     });
+
+    // 7. Emit turn update
+    const currentPlayer = players.get(playerOrder[currentTurn]);
+    if (currentPlayer) {
+        io.emit('turnUpdate', {
+            activeUsername: playerOrder[currentTurn],
+            username: currentPlayer.username
+        });
+    }
 }
-const suspects = ["Janitor", "Aunt", "Chef", "James", "Butler", "Grandfather"];
-const weapons  = ["knife", "candlestick", "revolver", "wrench", "rope"];
-const rooms    = ["kitchen", "ballroom", "conservatory", "library", "study"];
-let solution = null;
-function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 function rolldice(socket) {
+    const username = socketToUser.get(socket.id);
+    if (!username) return;
+
     // 1. Validation: Is it actually this player's turn?
-    if (socket.id !== playerOrder[currentTurn]) {
+    if (username !== playerOrder[currentTurn]) {
         socket.emit('error_message', "It's not your turn!");
         return;
     }
@@ -247,23 +276,40 @@ function rolldice(socket) {
 
     // 3. Broadcast result to EVERYONE (including the roller)
     io.emit('diceRolled', {
-        username: players.get(socket.id).username,
+        username: username,
         d1: d1,
-        d2: d2,
-        socketId: socket.id
+        d2: d2
     });
 }
 
 function nextTurn() {
     if (playerOrder.length === 0) return;
 
-    currentTurn = (currentTurn + 1) % playerOrder.length;
-    const nextPlayerId = playerOrder[currentTurn];
+    // Find next active player (skip disconnected players)
+    let attempts = 0;
+    do {
+        currentTurn = (currentTurn + 1) % playerOrder.length;
+        attempts++;
+        
+        const nextUsername = playerOrder[currentTurn];
+        const nextPlayer = players.get(nextUsername);
+        
+        // If player is connected and valid, use them
+        if (nextPlayer && nextPlayer.socketId) {
+            io.emit('turnUpdate', {
+                activeUsername: nextUsername,
+                username: nextPlayer.username
+            });
+            console.log(`Turn passed to ${nextUsername}`);
+            return;
+        }
+        
+        // Skip disconnected players
+        console.log(`Skipping disconnected player: ${nextUsername}`);
+    } while (attempts < playerOrder.length);
 
-    io.emit('turnUpdate', {
-        activePlayerId: nextPlayerId,
-        username: players.get(nextPlayerId).username
-    });
+    // If all players are disconnected
+    console.log("No active players found");
 }
 
 // Start server
