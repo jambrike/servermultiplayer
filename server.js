@@ -18,11 +18,23 @@ const players = new Map();
 let playerOrder = [];
 let currentTurn = 0;
 
+// Predefined spawn positions on the board
+const spawnPositions = [
+    { x: 1, y: 1 },
+    { x: 16, y: 1 },
+    { x: 1, y: 16 },
+    { x: 16, y: 16 },
+    { x: 9, y: 0 },
+    { x: 0, y: 9 },
+    { x: 17, y: 9 },
+    { x: 9, y: 17 }
+];
+
 // Socket.io connection handling
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    // Position
+    // Position update from clients
     socket.on('playerInfo', (data) => {
         const player = players.get(socket.id);
 
@@ -46,22 +58,41 @@ io.on('connection', (socket) => {
     socket.on('login', (data) => {
         console.log('User logged in:', data.username);
 
+        // Assign a spawn based on join order
+        const index = players.size % spawnPositions.length;
+        const spawn = spawnPositions[index];
+
         // Store player info
         players.set(socket.id, {
             username: data.username,
-            socketId: socket.id
+            socketId: socket.id,
+            x: spawn.x,
+            y: spawn.y,
+            spawnIndex: index
         });
 
-        // Send confirmation back to client
+        // Send confirmation back to client (with starting position)
         socket.emit('loginSuccess', {
             socketId: socket.id,
-            username: data.username
+            username: data.username,
+            x: spawn.x,
+            y: spawn.y
         });
+
+        // Send current players state to the newly joined client
+        socket.emit('playersState', Array.from(players.values()).map(p => ({
+            socketId: p.socketId,
+            username: p.username,
+            x: p.x,
+            y: p.y
+        })));
 
         // Notify other players
         socket.broadcast.emit('playerJoined', {
             username: data.username,
-            socketId: socket.id
+            socketId: socket.id,
+            x: spawn.x,
+            y: spawn.y
         });
     });
 
@@ -95,6 +126,11 @@ io.on('connection', (socket) => {
         } catch (error) {
             console.log("Invalid type");
         }
+    });
+
+    // Also support direct event for rolling dice
+    socket.on('rolldice', () => {
+        rolldice(socket);
     });
 });
 
