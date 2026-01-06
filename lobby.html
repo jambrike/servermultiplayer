@@ -88,9 +88,9 @@
             </div>
         </div>
     </div>
-    <script src="https://cleuro-game.onrender.com/socket.io/socket.io.js"></script>
+    <script src="https://servermultiplayer.onrender.com/socket.io/socket.io.js"></script>
     <script>
-        const socket = io('https://cleuro-game.onrender.com');
+        const socket = io('https://servermultiplayer.onrender.com');
         
         // Check if user is logged in
         const username = localStorage.getItem('username');
@@ -134,11 +134,11 @@
         
         // Start game button handler
         document.getElementById('start-game-btn').addEventListener('click', function() {
-            // Send start game request to server
-            socket.send(JSON.stringify({ type: 'startGame' }));
+            // Send start game request to server using emit instead of send
+            socket.emit('startGame');
             
-            // Wait for server confirmation
-            socket.on('gameStarted', function(data) {
+            // Listen for server confirmation once
+            socket.once('gameStarted', function(data) {
                 // Save the Player's order
                 localStorage.setItem('gameOrder', JSON.stringify(data.order));
                 localStorage.setItem('activePlayerId', data.activePlayer);
