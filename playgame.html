@@ -18,7 +18,38 @@
 
         <div class="pagewall">
             <div id="game"></div>
-            <div class="pickcard">choose thing</div>
+            <div id="pickcard" class="pickcard"><!--suspect-->
+                <div class="cardrow">
+                    <label>Suspect:</label>
+                    <select id="suspect-select">
+                        <option value="">Choose...</option>
+                        <option value="Janitor">Janitor</option>
+                        <option value="Aunt">Aunt</option>
+                        <option value="Chef">Chef</option>
+                        <option value="James">James</option>
+                        <option value="Butler">Butler</option>
+                        <option value="Grandfather">Grandfather</option>
+                    </select>
+                </div>
+                <!--this is for picking the weapon-->
+                <div class="cardrow">
+                    <label>Weapon:</label>
+                    <select id="weapon-select">
+                        <option value="">Choose...</option>
+                        <option value="knife">Knife</option>
+                        <option value="candlestick">Candlestick</option>
+                        <option value="revolver">Revolver</option>
+                        <option value="rope">Rope</option>
+                        <option value="wrench">Wrench</option>
+                    </select>
+                </div> <!--this is so it picks the room you are in-->
+                <div class="cardrow">
+                    <label>Room:</label>
+                    <span id="current-room" style="color: rgb(132, 77, 184); font-weight: bold;">—</span>
+                </div>
+                <button id="ask-button">Ask About These</button>
+            </div>
+<!--dont really use this tbh-->
     <div id="fail-screen" class="fullscreen" style="display:none;">
         <h1 style="color:white;">You failed to solve the case in time(killer got away)</h1>
         <button onclick="location.reload()">Restart Game</button></div>
