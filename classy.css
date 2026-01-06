@@ -1,218 +1,334 @@
 body{
-                background-color: rgb(49, 27, 50);
-                font-size: 12px;
-                font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    background-color: rgb(49, 27, 50);
+    font-size: 12px;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
 
-            }
-            /*gonna do header to put corner box in stop overlap*/
-            .header{
-                width:100%;
-                padding: 18px; margin-bottom:20px;
-                border-bottom: 2px solid #4b2b57;
-            }
-            .header h1{
-                margin:0; font-size:36px; 
-                color:white;
+.wrapper{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    gap: 20px;
+    width: 100%;
+}
 
+/* Left Panel - Commands */
+.commands-panel {
+    flex: 0 0 220px;
+    background: rgba(40, 20, 41, 0.9);
+    border-radius: 10px;
+    padding: 18px;
+    border: 2px solid #4b2b57;
+    height: fit-content;
+}
 
-            }
-            .header h2{
-                margin:0; font-size: 18px;
-            }
-        .wrapper{
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-            }
-            #game {
-                display: grid;
+.commands h1{
+    margin: 0 0 15px 0;
+    font-size: 36px;
+    color: white;
+    text-align: center;
+}
 
-                /*50x30*//*18by18 in the end one thousand 500 would be too much to load and manage*/
-                grid-template-columns: repeat(18, 1fr);
-                grid-template-rows: repeat(18, 1fr);
-                background: #111;
+.commands h2{
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    color: #ccc;
+}
 
-                justify-content: center;
-                align-content: center;
+#cornerbox{
+    background: #222;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    margin-top: 15px;
+}
 
-                gap:1px;
-            }
-            .cell{
-                border:1px solid #222;
-                background:#1c1c1c;
-                width:32px;height:32px;
-                box-sizing: border-box;
+#rolldice{
+    display: block;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    cursor: pointer;
+    background: #3c0d48;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+}
 
-                display:flex; align-items: center; justify-content: center;
-            }
-            .player{
-                background:silver;
-                background-image: url(image/player.png);
-                background-size: cover;
-                background-repeat: no-repeat;
-                background-position: center;
-                
-            }
-            .room{
-                background: rgba(49, 49, 49, 0.6);
-                border: 2px solid rgb(70, 70, 70);
-                box-sizing: border-box;
-            }
-            .floor{
-                background-image: url(image/woodflooring.png);
-                background-size: cover;
-                background-repeat: no-repeat;
-                background-position: center;
-                background-size: cover;
+#rolldice:hover {
+    background: #791d8e;
+}
 
-            }
-            .library{
-                background-image: url(image/books.png);
-                background-size: cover;
-                background-repeat: no-repeat;
-                background-position: center;
-                background-size: cover;
-                
-            }
-            .ballroom{
-                background-image: url(image/livingroom.png);
-                background-size: cover;
-                background-repeat: no-repeat;
-                background-position: center;
-                background-size: cover;
-            }   
-            .kitchen{
-                background-image: url(image/kitchenmarble.png);
-                background-size: cover;
-                background-repeat: no-repeat;
-                background-position: center;
-                background-size: cover;
-            }
-            .study{/*using for both*/
-                background-image: url(image/studyroom.png);
-                background-size: cover;
-                background-repeat: no-repeat;
-                background-position: center;
-                background-size: cover;
-            }
-            .subtitle{
-                width: 100%;
-                text-align: center; font-family: 'Courier New', Courier, monospace;
-                min-height: 20px; margin-top: 5px;
-                padding: 10px; border-top: 2px solid #444;
-                font-size: 18px;
-                color:#ffffff;
-            }
+#solvebutton {
+    background: red;
+    color: white;
+    cursor: pointer;
+    padding: 10px 15px;
+    margin-top: 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 14px;
+    font-weight: bold;
+}
 
-            #detectivecard{
-                color:none;
-            }
-            #solvebutton{ /*not as class dumby*/
-                background: red;
-                color: white;
-                cursor:pointer;
-                padding: 8px 15px;
-                margin-top: 8px;        
-                border-radius: 6px;
-            }
-            
+#solvebutton:hover {
+    background: #ff3333;
+}
 
+/* Center Panel - Game */
+.game-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    max-width: 800px;
+    margin: 0 auto;
+}
 
-            #cornerbox{
-                position: static;
-                top: 20px;
-                right: 20px;
-                background: #222;
-                padding: 10px 15px;
-                border-radius: 8px;
-                text-align: center;
-                color: #eee;
-                align-items: center;
-                flex-direction: column;
-                display: flex;
-            }
-            .roomoverlay{/*player move free*/
-                pointer-events: none;
-            }
-            #rolldice{
-                display:block;
-                margin-bottom: 8px;
-                padding:5px 10px;
-                cursor:pointer;
-            }
-            .fullscreen{
-                width:100vw; height:100vh;
-                position: fixed;
-                top:0;left:0;
-                background: black; color:red;
-                z-index: 85;
-                display: flex; flex-direction: column;
-                align-items: center; justify-content: center;
-            }
-            .player{
-                z-index: 20;
-            }
-            .door{
-                background: rgb(111, 68, 68);
-                background-image: url(image/door.png);
-                background-position: center;
-                background-size: cover;
-                background-repeat: no-repeat;
-            }
-            .pickcard{
-                background: #2c2c2c;
-                border: 1px solid #0f0f0f;
-                width: auto;
-                height: auto;
-                display: flex; /* CHANGED from display: none */
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                padding: 16px;
-                border-radius: 8px;
-                gap: 12px;
-                margin-top: 20px;
-            }
+#game {
+    display: grid;
+    grid-template-columns: repeat(18, 1fr);
+    grid-template-rows: repeat(18, 1fr);
+    background: #111;
+    justify-content: center;
+    align-content: center;
+    gap: 1px;
+    width: fit-content;
+    margin: 0 auto;
+}
 
-            .cardrow {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                width: 100%;
-            }
+.cell{
+    border: 1px solid #222;
+    background:#1c1c1c;
+    width: 32px;
+    height: 32px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-            .cardrow label {
-                color: rgb(132, 77, 184);
-                font-weight: bold;
-                min-width: 80px;
-            }
+.player{
+    background: silver;
+    background-image: url(image/player.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 20;
+}
 
-            .cardrow select {
-                flex: 1;
-                padding: 8px;
-                background: #2d2c2c;
-                color: #979797;
-                border: 1px solid #68137d;
-                border-radius: 4px;
-                font-size: 14px;
-            }
+.room{
+    background: rgba(49, 49, 49, 0.6);
+    border: 2px solid rgb(70, 70, 70);
+    box-sizing: border-box;
+}
 
-            #ask-button {
-                padding: 10px 16px;
-                background: #3c0d48;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 16px;
-                width: 100%;
-            }
+.floor{
+    background-image: url(image/woodflooring.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
 
-            #ask-button:hover {
-                background: #791d8e;
-            }
+.library{
+    background-image: url(image/books.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.ballroom{
+    background-image: url(image/livingroom.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.kitchen{
+    background-image: url(image/kitchenmarble.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.study{
+    background-image: url(image/studyroom.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.door{
+    background: rgb(111, 68, 68);
+    background-image: url(image/door.png);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.subtitle{
+    width: 100%;
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 20px;
+    margin-top: 15px;
+    padding: 10px;
+    border-top: 2px solid #444;
+    font-size: 18px;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+}
+
+/* Right Panel - Card Selection */
+.card-panel {
+    flex: 0 0 250px;
+    height: fit-content;
+}
+
+.pickcard{
+    background: #2c2c2c;
+    border: 2px solid #4b2b57;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 16px;
+    border-radius: 10px;
+    gap: 12px;
+}
+
+.pickcard h3 {
+    color: white;
+    margin: 0 0 15px 0;
+    font-size: 20px;
+    text-align: center;
+    width: 100%;
+    border-bottom: 1px solid #4b2b57;
+    padding-bottom: 8px;
+}
+
+.cardrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.cardrow label {
+    color: rgb(200, 160, 240);
+    font-weight: bold;
+    min-width: 80px;
+    font-size: 14px;
+}
+
+.cardrow select {
+    flex: 1;
+    padding: 8px;
+    background: #1a1a1a;
+    color: #ddd;
+    border: 1px solid #68137d;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+#current-room {
+    color: rgb(200, 160, 240);
+    font-weight: bold;
+    font-size: 14px;
+    padding: 8px;
+    background: rgba(30, 30, 30, 0.7);
+    border-radius: 4px;
+    width: 100%;
+    text-align: center;
+}
+
+#ask-button {
+    padding: 12px 16px;
+    background: #3c0d48;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+#ask-button:hover {
+    background: #791d8e;
+}
+
+/* Fullscreen overlays */
+.fullscreen{
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: black;
+    color: red;
+    z-index: 85;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.roomoverlay{
+    pointer-events: none;
+}
+
+/* Page header (if needed at top) */
+.pagewall {
+    display: none; /* This will be handled by the new layout */
+}
+
+/* Responsive adjustments */
+@media (max-width: 1100px) {
+    .wrapper {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .commands-panel, .card-panel {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 600px;
+    }
+    
+    .game-panel {
+        order: -1; /* Game goes on top on mobile */
+        margin-bottom: 20px;
+    }
+}
+
+/* Additional utility styles */
+#detectivecard{
+    color: none;
+}
+
+#stepsleft {
+    font-weight: bold;
+    font-size: 18px;
+    color: #ffcc00;
+}
+
+#clue-text {
+    font-weight: bold;
+    color: #ffcc00;
+}

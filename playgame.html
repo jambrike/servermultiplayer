@@ -3,22 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Cluero</title>
-        <link rel="stylesheet" href="classy.css">
-    </head>
-    <div class="header">
-        <h1>Cluero</h1>
-        <div id="cornerbox">
-                <button id="rolldice">Roll Dice</button>
-                <p>Steps left: <span id="stepsleft">0</span></p>
-                <button id="solvebutton">Your final guess</button>
-            </div> 
-    </div>
-    <body><div class="wrapper"><audio id="background-music" src="riddles.mp3" loop autoplay></audio>
+    <title>Cluero</title>
+    <link rel="stylesheet" href="classy.css">
+</head>
 
-        <div class="pagewall">
+<body>
+    <audio id="background-music" src="riddles.mp3" loop autoplay></audio>
+    
+    <div class="wrapper">
+        <!-- Left Panel: Controls & Commands -->
+        <div class="commands-panel">
+            <div class="commands">
+                <h1>Cluero</h1>
+                <h2>Detective Controls</h2>
+                <div id="cornerbox">
+                    <button id="rolldice">Roll Dice</button>
+                    <p>Steps left: <span id="stepsleft">0</span></p>
+                    <button id="solvebutton">Your final guess</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Center Panel: Game Board -->
+        <div class="game-panel">
             <div id="game"></div>
+            <div class="subtitle">
+                <span id="clue-text">Search for clues. Move with arrow keys or dice.</span>
+            </div>
+        </div>
+        
+        <!-- Right Panel: Card Selection -->
+        <div class="card-panel">
             <div id="pickcard" class="pickcard">
+                <h3>Make an Accusation</h3>
                 <div class="cardrow">
                     <label>Suspect:</label>
                     <select id="suspect-select">
@@ -48,15 +65,17 @@
                 </div>
                 <button id="ask-button">Ask About These</button>
             </div>
-<!--dont really use this tbh-->
+        </div>
+    </div>
+    
+    <!-- Overlay screens -->
     <div id="fail-screen" class="fullscreen" style="display:none;">
-        <h1 style="color:white;">You failed to solve the case in time(killer got away)</h1>
-        <button onclick="location.reload()">Restart Game</button></div>
-        <div class="subtitle">
-                <span id="clue-text">search for clues</span>
-            </div>
-    </div></div></body>
+        <h1 style="color:white;">You failed to solve the case in time (killer got away)</h1>
+        <button onclick="location.reload()">Restart Game</button>
+    </div>
+</body>
 
-    <script src="https://servermultiplayer.onrender.com/socket.io/socket.io.js"></script>
-    <script src="game.js"></script>
+<script src="https://servermultiplayer.onrender.com/socket.io/socket.io.js"></script>
+<script src="game.js"></script>
+
 </html>
