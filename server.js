@@ -183,6 +183,7 @@ function rolldice(socket) {
         socketId: socket.id
     });
 
+    // 4. Move to next turn AFTER dice is rolled
     nextTurn();
 }
 
